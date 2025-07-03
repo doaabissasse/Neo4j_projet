@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j
+    restart: always
+    environment:
+      - NEO4J_AUTH=neo4j/hajar8mb
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      # Dossier local pour scripts Cypher
+      - ./data:/var/lib/neo4j/import
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_conf:/var/lib/neo4j/conf
+    networks:
+      - langflow_network
+ 
+  langflow:
+    image: 44f2bdb7cba2
+    container_name: langflow_container
+    ports:
+      - "7860:7860"
+    volumes:
+      - .:/app
+      - ./langflow_data:/data
+    depends_on:
+      - chromadb
+      - neo4j
+      - ollama
+    command: langflow run --host 0.0.0.0 --port 7860
+    environment:
+      - CHROMA_HOST=chroma_db
+      - CHROMA_PORT=8000
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+    networks:
+      - langflow_network
+
+volumes:
+  langflow_data:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_conf:
+  neo4j_import:  # facultatif mais clair pour Docker UI
